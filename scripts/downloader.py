@@ -14,6 +14,8 @@ from PIL import Image
 from tqdm import tqdm
 from urllib3.util import Retry
 
+import csv
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -41,12 +43,31 @@ def parse_dataset(_dataset, _outdir, _max=10000):
     :return: list of tuple containing absolute path and url of image
     """
     _fnames_urls = []
+
+    id_to_labels = []
+
+
+
     with open(dataset, 'r') as f:
         data = json.load(f)
         for image in data["images"]:
             url = image["url"]
             fname = os.path.join(outdir, "{}.jpg".format(image["imageId"]))
             _fnames_urls.append((fname, url))
+
+        for annotation in data["annotations"][:_max]:
+            label = ["0" for i in range(300)]
+            for label_id in annotation["labelId"]:
+                label[int(label_id)] = "1"
+            id_to_labels.append(label)
+
+    print(len(id_to_labels))
+
+    with open(os.path.join(outdir, 'labels.csv'), 'w') as label_f:
+        writer = csv.writer(label_f)
+        for line in id_to_labels:
+            writer.writerow(line)
+
     return _fnames_urls[:_max]
 
 
